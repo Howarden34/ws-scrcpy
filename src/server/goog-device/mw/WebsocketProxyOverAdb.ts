@@ -7,6 +7,25 @@ import { ACTION } from '../../../common/Action';
 export class WebsocketProxyOverAdb extends WebsocketProxy {
     public static processRequest(ws: WS, params: RequestParameters): WebsocketProxy | undefined {
         const { parsedQuery, parsedUrl } = params;
+        // {
+        //     action: 'proxy-adb',
+        //     remote: 'tcp:8886',
+        //     udid: 'CSX0217927006370'
+        // }
+        // {
+        //     protocol: null,
+        //     slashes: null,
+        //     auth: null,
+        //     host: null,
+        //     port: null,
+        //     hostname: null,
+        //     hash: null,
+        //     search: '?action=proxy-adb&remote=tcp%3A8886&udid=CSX0217927006370',
+        //     query: 'action=proxy-adb&remote=tcp%3A8886&udid=CSX0217927006370',
+        //     pathname: '/',
+        //     path: '/?action=proxy-adb&remote=tcp%3A8886&udid=CSX0217927006370',
+        //     href: '/?action=proxy-adb&remote=tcp%3A8886&udid=CSX0217927006370'
+        // }
         let udid: string | string[] = '';
         let remote: string | string[] = '';
         let path: string | string[] = '';
@@ -47,6 +66,7 @@ export class WebsocketProxyOverAdb extends WebsocketProxy {
     }
 
     public static createProxyOverAdb(ws: WS, udid: string, remote: string, path?: string): WebsocketProxy {
+        // 创建基于ADB转发的ws接口
         const service = new WebsocketProxy(ws);
         AdbUtils.forward(udid, remote)
             .then((port) => {

@@ -13,6 +13,7 @@ import * as crypto from 'crypto';
 import { DeviceState } from '../../../common/DeviceState';
 
 export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> implements Service {
+    // Scrcpy的控制端
     private static readonly defaultWaitAfterError = 1000;
     private static instance?: ControlCenter;
 
@@ -21,8 +22,8 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
     private tracker?: Tracker;
     private waitAfterError = 1000;
     private restartTimeoutId?: Timeout;
-    private deviceMap: Map<string, Device> = new Map();
-    private descriptors: Map<string, GoogDeviceDescriptor> = new Map();
+    private deviceMap: Map<string, Device> = new Map(); // udid,device
+    private descriptors: Map<string, GoogDeviceDescriptor> = new Map(); // udid,descriptor
     private readonly id: string;
 
     protected constructor() {
@@ -32,6 +33,7 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
     }
 
     public static getInstance(): ControlCenter {
+        // 获取实例对象
         if (!this.instance) {
             this.instance = new ControlCenter();
         }
@@ -39,10 +41,12 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
     }
 
     public static hasInstance(): boolean {
+        // 判断是否已生成控制对象实例
         return !!ControlCenter.instance;
     }
 
     private restartTracker = (): void => {
+        // 重启Tracker对象
         if (this.restartTimeoutId) {
             return;
         }
@@ -55,6 +59,7 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
     };
 
     private onChangeSet = (changes: TrackerChangeSet): void => {
+        // 未懂
         this.waitAfterError = ControlCenter.defaultWaitAfterError;
         if (changes.added.length) {
             for (const item of changes.added) {
@@ -77,12 +82,14 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
     };
 
     private onDeviceUpdate = (device: Device): void => {
+        // 当device变化时，重新发送一次设备信息
         const { udid, descriptor } = device;
         this.descriptors.set(udid, descriptor);
         this.emit('device', descriptor);
     };
 
     private handleConnected(udid: string, state: string): void {
+        // 设备连接上时，改变状态或者创建对象
         let device = this.deviceMap.get(udid);
         if (device) {
             device.setState(state);
@@ -107,10 +114,12 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
     }
 
     private async startTracker(): Promise<Tracker> {
+        // 开启设备监控
         if (this.tracker) {
             return this.tracker;
         }
         const tracker = await this.client.trackDevices();
+        // 监听事件注册，收到信号执行对应函数
         tracker.on('changeSet', this.onChangeSet);
         tracker.on('end', this.restartTracker);
         tracker.on('error', this.restartTracker);
@@ -118,7 +127,9 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
     }
 
     private stopTracker(): void {
+        // 关闭adbkit的Tracker对象
         if (this.tracker) {
+            // 注销事件监听，并关闭事件监听
             this.tracker.off('changeSet', this.onChangeSet);
             this.tracker.off('end', this.restartTracker);
             this.tracker.off('error', this.restartTracker);
@@ -130,32 +141,39 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
     }
 
     public getDevices(): GoogDeviceDescriptor[] {
+        // 以列表的方式返回所有descriptors对象
         return Array.from(this.descriptors.values());
     }
 
     public getDevice(udid: string): Device | undefined {
+        // 返回device对象
         return this.deviceMap.get(udid);
     }
 
     public getId(): string {
+        // 返回加密的ID值
         return this.id;
     }
 
     public getName(): string {
+        // 获取当前电脑的hostname
         return `aDevice Tracker [${os.hostname()}]`;
     }
 
     public start(): void {
+        // 初始化对象实例
         this.init().catch((e) => {
             console.error(`Error: Failed to init "${this.getName()}". ${e.message}`);
         });
     }
 
     public release(): void {
+        // 释放时关闭Tracker对象
         this.stopTracker();
     }
 
     public async runCommand(command: ControlCenterCommand): Promise<void> {
+        // 依据控制命令执行对应操作：杀死、启动server; 更新设备的网络地址段
         const udid = command.getUdid();
         const device = this.getDevice(udid);
         if (!device) {

@@ -17,6 +17,7 @@ type WaitForPidParams = { tryCounter: number; processExited: boolean; lookPidFil
 export class ScrcpyServer {
     private static PID_FILE_PATH = '/data/local/tmp/ws_scrcpy.pid';
     private static async copyServer(device: Device): Promise<PushTransfer> {
+        // 推送文件到手机端
         const src = path.join(FILE_DIR, FILE_NAME);
         const dst = TEMP_PATH + FILE_NAME; // don't use path.join(): will not work on win host
         return device.push(src, dst);
@@ -32,12 +33,14 @@ export class ScrcpyServer {
         }
         const timeout = 500 + 100 * tryCounter;
         if (lookPidFile) {
+            // 存在进程好保存文件
             const fileName = ScrcpyServer.PID_FILE_PATH;
             const content = await device.runShellCommandAdbKit(`test -f ${fileName} && cat ${fileName}`);
             if (content.trim()) {
                 const pid = parseInt(content, 10);
                 if (pid && !isNaN(pid)) {
                     const realPid = await this.getServerPid(device);
+                    // 判断本次启动的server的PID是否写在文件中，如是则启动成功
                     if (realPid?.includes(pid)) {
                         return realPid;
                     } else {
@@ -46,6 +49,7 @@ export class ScrcpyServer {
                 }
             }
         } else {
+            // 不存在进程文件，
             const list = await this.getServerPid(device);
             if (Array.isArray(list) && list.length) {
                 return list;
@@ -62,6 +66,7 @@ export class ScrcpyServer {
     }
 
     public static async getServerPid(device: Device): Promise<number[] | undefined> {
+        // 获取到设备的server的进程PID值或列表
         if (!device.isConnected()) {
             return;
         }
@@ -109,6 +114,7 @@ export class ScrcpyServer {
     }
 
     public static async run(device: Device): Promise<number[] | undefined> {
+        // 执行开启scrcpy服务：推送文件——》启动server
         if (!device.isConnected()) {
             return;
         }
@@ -116,9 +122,11 @@ export class ScrcpyServer {
         if (Array.isArray(list) && list.length) {
             return list;
         }
+        // 推送文件
         await this.copyServer(device);
 
         const params: WaitForPidParams = { tryCounter: 0, processExited: false, lookPidFile: true };
+        // 启动server服务
         const runPromise = device.runShellCommandAdb(RUN_COMMAND);
         runPromise
             .then((out) => {
@@ -132,6 +140,7 @@ export class ScrcpyServer {
             .finally(() => {
                 params.processExited = true;
             });
+        // 确认服务是否成功启动
         list = await Promise.race([runPromise, this.waitForServerPid(device, params)]);
         if (Array.isArray(list) && list.length) {
             return list;

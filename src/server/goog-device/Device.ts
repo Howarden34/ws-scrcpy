@@ -1,6 +1,7 @@
 import { AdbExtended } from './adb';
 import AdbKitClient from '@devicefarmer/adbkit/lib/adb/client';
 import PushTransfer from '@devicefarmer/adbkit/lib/adb/sync/pushtransfer';
+// 前端异步子进程组件
 import { spawn } from 'child_process';
 import { NetInterface } from '../../types/NetInterface';
 import { TypedEmitter } from '../../common/TypedEmitter';
@@ -74,6 +75,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     public async getPidOf(processName: string): Promise<number[] | undefined> {
+        // 未懂
         if (!this.connected) {
             return;
         }
@@ -98,8 +100,10 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     public async runShellCommandAdb(command: string): Promise<string> {
+        console.log(command)
         return new Promise<string>((resolve, reject) => {
             const cmd = 'adb';
+            // const args = ['-s', `${this.udid}`, '-H', '10.227.71.46', '-P', '5039', 'shell', command];
             const args = ['-s', `${this.udid}`, 'shell', command];
             const adb = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
             let output = '';
@@ -126,6 +130,8 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     public async runShellCommandAdbKit(command: string): Promise<string> {
+        // 利用adb-client来执行cmd
+        console.log(command)
         return this.client
             .shell(this.udid, command)
             .then(AdbExtended.util.readAll)
@@ -144,10 +150,12 @@ export class Device extends TypedEmitter<DeviceEvents> {
             return;
         }
         this.properties = await this.client.getProperties(this.udid);
+        // 返回adbkit获取到的设备信息
         return this.properties;
     }
 
     private interfacesSort = (a: NetInterface, b: NetInterface): number => {
+        // 未知
         if (a.name > b.name) {
             return 1;
         }
@@ -158,6 +166,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     };
 
     public async getNetInterfaces(): Promise<NetInterface[]> {
+        // 获取安卓手机端的网络端口：USB、其他
         if (!this.connected) {
             return [];
         }
@@ -175,6 +184,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     private async pidOf(processName: string): Promise<number[]> {
+        // adbkit通过进程名获取进程PID号
         return this.runShellCommandAdbKit(`pidof ${processName}`)
             .then((output) => {
                 return output
@@ -188,6 +198,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     private filterPsOutput(processName: string, output: string): number[] {
+        // 切分ps获取进程PID列表
         const list: number[] = [];
         const processes = output.split('\n');
         processes.map((line) => {
@@ -206,6 +217,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     private async grepPs_A(processName: string): Promise<number[]> {
+        // 通过进程名来获取所有相关的进程PID列表
         return this.runShellCommandAdbKit(`ps -A | grep ${processName}`)
             .then((output) => {
                 return this.filterPsOutput(processName, output);
@@ -216,6 +228,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     private async grepPs(processName: string): Promise<number[]> {
+        // 通过进程名来获取所有相关的进程PID列表
         return this.runShellCommandAdbKit(`ps | grep ${processName}`)
             .then((output) => {
                 return this.filterPsOutput(processName, output);
@@ -226,6 +239,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     private async listProc(processName: string): Promise<number[]> {
+        // 获取手机端所有cmd的文件，返回列表（未知作用）
         const find = `find /proc -maxdepth 2 -name cmdline  2>/dev/null`;
         const lines = await this.runShellCommandAdbKit(
             `for L in \`${find}\`; do grep -sae '^${processName}' $L 2>&1 >/dev/null && echo $L; done`,
@@ -243,6 +257,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     private async executedWithoutError(command: string): Promise<boolean> {
+        // 执行命里，并判定执行过程中是否出现异常
         return this.runShellCommandAdbKit(command)
             .then((output) => {
                 const err = parseInt(output, 10);
@@ -254,10 +269,12 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     private async hasPs(): Promise<boolean> {
+        // 判定是否有名为'init'的进程
         return this.executedWithoutError('ps | grep init 2>&1 >/dev/null; echo $?');
     }
 
     private async hasPs_A(): Promise<boolean> {
+        // 判定是否可执行'ps -A'
         return this.executedWithoutError('ps -A | grep init 2>&1 >/dev/null; echo $?');
     }
 
@@ -285,6 +302,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     private async findDetectionVariant(): Promise<PID_DETECTION> {
+        // 找到可执行获取进程PID——进程名的方式
         if (await this.hasPidOf()) {
             return PID_DETECTION.PIDOF;
         }
@@ -316,6 +334,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
                     return false;
                 }
                 let changed = false;
+                // 依次校对各个参数值是否发生变化
                 Properties.forEach((propName: keyof GoogDeviceDescriptor) => {
                     if (props[propName] !== this.descriptor[propName]) {
                         changed = true;
@@ -339,6 +358,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
             const serverPromise = pidPromise.then(() => {
                 return !(this.descriptor.pid === -1 && this.spawnServer);
             });
+            // 未懂部分
             Promise.all([propsPromise, netIntPromise, serverPromise])
                 .then((results) => {
                     this.updateTimeoutId = undefined;
@@ -364,6 +384,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     };
 
     private emitUpdate(setUpdateTime = true): void {
+        // 依据设定时间，是否发送更新信号
         const THROTTLE = 300;
         const now = Date.now();
         const time = now - this.lastEmit;
@@ -384,6 +405,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     private async getServerPid(): Promise<undefined | number> {
+        // 获取Scrcpy-server的进程PID号
         const pids = await ScrcpyServer.getServerPid(this);
         let pid;
         if (!Array.isArray(pids) || !pids.length) {
@@ -403,6 +425,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     public async updateInterfaces(): Promise<NetInterface[]> {
+        // 对比是否出现手机网络变化
         return this.getNetInterfaces().then((interfaces) => {
             let changed = false;
             const old = this.descriptor.interfaces;
@@ -424,6 +447,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     public async killServer(pid: number): Promise<void> {
+        // 杀死手机端的scrcpy-server的进程服务
         this.spawnServer = false;
         const realPid = await this.getServerPid();
         if (typeof realPid !== 'number') {
@@ -446,6 +470,8 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     public async startServer(): Promise<number | undefined> {
+        // 开启手机端的scrcpy-server进程服务，启动前校验一次是否已开启过
+        console.log(this.udid, 'starting scrcpy-server');
         this.spawnServer = true;
         const pid = await this.getServerPid();
         if (typeof pid === 'number') {

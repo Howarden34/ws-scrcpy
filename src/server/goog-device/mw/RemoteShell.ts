@@ -48,6 +48,7 @@ export class RemoteShell extends Mw {
         const { cols = 80, rows = 24 } = params;
         const cwd = env.PWD || '/';
         const file = OS_WINDOWS ? 'adb.exe' : 'adb';
+        // const term = pty.spawn(file, ['-s', params.udid, '-H', '10.227.71.46', '-P', '5039','shell'], {
         const term = pty.spawn(file, ['-s', params.udid, 'shell'], {
             name: 'xterm-256color',
             cols,
