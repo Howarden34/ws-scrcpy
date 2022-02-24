@@ -63,17 +63,20 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
         this.waitAfterError = ControlCenter.defaultWaitAfterError;
         if (changes.added.length) {
             for (const item of changes.added) {
+                // 有设备插入
                 const { id, type } = item;
                 this.handleConnected(id, type);
             }
         }
         if (changes.removed.length) {
+            // 有设备移除
             for (const item of changes.removed) {
                 const { id } = item;
                 this.handleConnected(id, DeviceState.DISCONNECTED);
             }
         }
         if (changes.changed.length) {
+            // 设备状态变化
             for (const item of changes.changed) {
                 const { id, type } = item;
                 this.handleConnected(id, type);
@@ -92,8 +95,10 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
         // 设备连接上时，改变状态或者创建对象
         let device = this.deviceMap.get(udid);
         if (device) {
+            // 非初次连接，直接初始化设备对象
             device.setState(state);
         } else {
+            // 首次连接上，准备创建对象，并执行初始化
             device = new Device(udid, state);
             device.on('update', this.onDeviceUpdate);
             this.deviceMap.set(udid, device);

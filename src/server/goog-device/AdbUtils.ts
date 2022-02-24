@@ -139,15 +139,18 @@ export class AdbUtils {
     }
 
     public static async forward(serial: string, remote: string): Promise<number> {
+        // 执行ADB端口转发指令
         const client = AdbExtended.createClient();
         const forwards = await client.listForwards(serial);
         const forward = forwards.find((item: Forward) => {
             return item.remote === remote && item.local.startsWith('tcp:') && item.serial === serial;
         });
         if (forward) {
+            // 已存在，不需要再次转发
             const { local } = forward;
             return parseInt(local.split('tcp:')[1], 10);
         }
+        // 不存在，执行实际转发任务
         const port = await portfinder.getPortPromise();
         const local = `tcp:${port}`;
         console.log("${serial} forward ${port}")

@@ -62,12 +62,14 @@ export class WebsocketProxyOverAdb extends WebsocketProxy {
             ws.close(4003, `[${this.TAG}] Invalid value "${path}" for "path" parameter`);
             return;
         }
+        // 返回WebsocketProxy对象
         return this.createProxyOverAdb(ws, udid, remote, path);
     }
 
     public static createProxyOverAdb(ws: WS, udid: string, remote: string, path?: string): WebsocketProxy {
         // 创建基于ADB转发的ws接口
         const service = new WebsocketProxy(ws);
+        // 使用ADBforward执行端口映射
         AdbUtils.forward(udid, remote)
             .then((port) => {
                 return service.init(`ws://127.0.0.1:${port}${path ? path : ''}`);

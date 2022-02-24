@@ -7,6 +7,7 @@ import { HttpServer, ServerAndPort } from './HttpServer';
 import { MwFactory } from '../mw/Mw';
 
 export class WebSocketServer implements Service {
+    // 开启面向前端的ws连接
     private static instance?: WebSocketServer;
     private servers: WSServer[] = [];
     private mwFactories: Set<MwFactory> = new Set();
@@ -16,6 +17,7 @@ export class WebSocketServer implements Service {
     }
 
     public static getInstance(): WebSocketServer {
+        // 单例模式，全局只有一个ws对象链接
         if (!this.instance) {
             this.instance = new WebSocketServer();
         }

@@ -46,6 +46,7 @@ export class WebsocketProxy extends Mw {
             this.flush();
         };
         remoteSocket.onmessage = (event) => {
+            // this.ws是与前端进行沟通的ws连接
             if (this.ws && this.ws.readyState === this.ws.OPEN) {
                 if (Array.isArray(event.data)) {
                     event.data.forEach((data) => this.ws.send(data));
@@ -69,6 +70,7 @@ export class WebsocketProxy extends Mw {
     private flush(): void {
         if (this.remoteSocket) {
             while (this.storage.length) {
+                // 数组开头弹出一个元素
                 const event = this.storage.shift();
                 if (event && event.data) {
                     this.remoteSocket.send(event.data);
@@ -83,6 +85,7 @@ export class WebsocketProxy extends Mw {
 
     protected onSocketMessage(event: WS.MessageEvent): void {
         if (this.remoteSocket) {
+            // 收到前端发送过来的action数据，转发送给后端ADB的socket操作数据
             this.remoteSocket.send(event.data);
         } else {
             this.storage.push(event);

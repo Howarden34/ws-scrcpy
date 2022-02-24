@@ -100,7 +100,6 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     public async runShellCommandAdb(command: string): Promise<string> {
-        console.log(command)
         return new Promise<string>((resolve, reject) => {
             const cmd = 'adb';
             // const args = ['-s', `${this.udid}`, '-H', '10.227.71.46', '-P', '5039', 'shell', command];
@@ -359,9 +358,11 @@ export class Device extends TypedEmitter<DeviceEvents> {
                 return !(this.descriptor.pid === -1 && this.spawnServer);
             });
             // 未懂部分
+            // Promise.all(promisesArrayOrIterable)，将结果聚合到一个数组里
             Promise.all([propsPromise, netIntPromise, serverPromise])
                 .then((results) => {
                     this.updateTimeoutId = undefined;
+                    // 获取results中非真个数，即false个数
                     const failedCount = results.filter((result) => !result).length;
                     if (!failedCount) {
                         this.updateCount = 0;
@@ -375,6 +376,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
                     this.scheduleInfoUpdate();
                 });
         } else {
+            // 设备未连接状态
             this.updateCount = 0;
             this.updateTimeout = Device.INITIAL_UPDATE_TIMEOUT;
             this.updateTimeoutId = undefined;
