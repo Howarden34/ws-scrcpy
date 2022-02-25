@@ -130,7 +130,6 @@ export class Device extends TypedEmitter<DeviceEvents> {
 
     public async runShellCommandAdbKit(command: string): Promise<string> {
         // 利用adb-client来执行cmd
-        console.log(command)
         return this.client
             .shell(this.udid, command)
             .then(AdbExtended.util.readAll)
@@ -473,7 +472,6 @@ export class Device extends TypedEmitter<DeviceEvents> {
 
     public async startServer(): Promise<number | undefined> {
         // 开启手机端的scrcpy-server进程服务，启动前校验一次是否已开启过
-        console.log(this.udid, 'starting scrcpy-server');
         this.spawnServer = true;
         const pid = await this.getServerPid();
         if (typeof pid === 'number') {

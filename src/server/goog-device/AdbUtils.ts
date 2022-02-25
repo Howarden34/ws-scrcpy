@@ -37,7 +37,6 @@ export class AdbUtils {
 
     public static async push(serial: string, stream: ReadStream, pathString: string): Promise<PushTransfer> {
         const client = AdbExtended.createClient();
-        console.log(pathString)
         const transfer = await client.push(serial, stream, pathString);
         client.on('error', (e: Error) => {
             transfer.emit('error', e);
